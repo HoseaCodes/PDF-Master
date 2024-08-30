@@ -1,7 +1,3 @@
-Here is a README for your PDF Merge Next.js application:
-
----
-
 # PDF Merge Next.js App
 
 ## Overview
