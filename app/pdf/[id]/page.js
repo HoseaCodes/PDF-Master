@@ -2,11 +2,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSpeechSynthesis } from 'react-speech-kit';
-import ProgressBar from '@ramonak/react-progress-bar';
+// import { useSpeechSynthesis } from 'react-speech-kit';
+// import ProgressBar from '@ramonak/react-progress-bar';
 
 export default function PdfPage({ params }) {
-  const { speak, cancel, speaking } = useSpeechSynthesis();
+//   const { speak, cancel, speaking } = useSpeechSynthesis();
   const [pdfData, setPdfData] = useState(null);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -23,29 +23,29 @@ export default function PdfPage({ params }) {
     fetchPdfData();
   }, [params.id]);
 
-  const startReading = () => {
-    if (pdfData) {
-      speak({
-        text: pdfData.textContent.slice(currentTextIndex),
-        onEnd: () => {
-          setProgress(100);
-          updateProgress(100, true);
-        },
-        onBoundary: (event) => {
-          setCurrentTextIndex(currentTextIndex + event.charIndex);
-          const newProgress = Math.round(
-            ((currentTextIndex + event.charIndex) / pdfData.textContent.length) * 100
-          );
-          setProgress(newProgress);
-          updateProgress(newProgress, false);
-        },
-      });
-    }
-  };
+//   const startReading = () => {
+//     if (pdfData) {
+//       speak({
+//         text: pdfData.textContent.slice(currentTextIndex),
+//         onEnd: () => {
+//           setProgress(100);
+//           updateProgress(100, true);
+//         },
+//         onBoundary: (event) => {
+//           setCurrentTextIndex(currentTextIndex + event.charIndex);
+//           const newProgress = Math.round(
+//             ((currentTextIndex + event.charIndex) / pdfData.textContent.length) * 100
+//           );
+//           setProgress(newProgress);
+//           updateProgress(newProgress, false);
+//         },
+//       });
+//     }
+//   };
 
-  const stopReading = () => {
-    cancel();
-  };
+//   const stopReading = () => {
+//     cancel();
+//   };
 
   const updateProgress = async (newProgress, completed) => {
     await fetch(`/api/pdf/${params.id}`, {
@@ -59,13 +59,13 @@ export default function PdfPage({ params }) {
       {pdfData ? (
         <>
           <h1>{pdfData.filename}</h1>
-          <ProgressBar completed={progress} />
-          <button onClick={startReading} disabled={speaking}>
-            Start Reading
-          </button>
-          <button onClick={stopReading} disabled={!speaking}>
+          {/* <ProgressBar completed={progress} /> */}
+          {/* <button onClick={startReading} disabled={speaking}> */}
+            {/* Start Reading
+          </button> */}
+          {/* <button onClick={stopReading} disabled={!speaking}>
             Stop Reading
-          </button>
+          </button> */}
         </>
       ) : (
         <p>Loading...</p>
