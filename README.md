@@ -1,5 +1,7 @@
 # PDF Smart Hub
 
+![PDF Smart Hub Logo](./assets/An_app_icon_featuring_a_stylized_PDF_document_with.png)
+
 ## Overview
 
 This application is built with Next.js and uses MongoDB for data storage and AWS S3 for managing PDF files. It allows users to upload, view, read, and interact with PDFs using various features like AI voices, summaries, quizzes, and chat.
