@@ -1,6 +1,6 @@
 # PDF Smart Hub
 
-![PDF Smart Hub Logo](./assets/An_app_icon_featuring_a_stylized_PDF_document_with.png)
+![PDF Smart Hub Logo](./public/IMG_9646.webp)
 
 ## Overview
 
