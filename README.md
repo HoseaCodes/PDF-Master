@@ -44,7 +44,7 @@ This application is built with Next.js and uses MongoDB for data storage and AWS
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/pdf-merge-nextjs.git
+   git clone https://github.com/HoseaCodes/PDF-Master.git
    cd pdf-merge-nextjs
    ```
 
