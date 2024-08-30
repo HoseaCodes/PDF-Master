@@ -1,4 +1,4 @@
-# PDF Merge
+# PDF Smart Hub
 
 ## Overview
 
