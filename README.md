@@ -1,4 +1,4 @@
-# PDF Merge Next.js App
+# PDF Merge
 
 ## Overview
 
