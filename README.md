@@ -1,6 +1,6 @@
 # PDF Smart Hub
 
-![PDF Smart Hub Logo](./public/IMG_9646.webp)
+![PDF Smart Hub Logo](./public/IMG_9646.png)
 
 ## Overview
 
