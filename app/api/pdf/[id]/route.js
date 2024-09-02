@@ -16,7 +16,7 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
-  const { progress, completed } = await req.json();
+  const { progress, completed, filename } = await req.json();
 
   const client = await clientPromise;
   const db = client.db();
@@ -24,7 +24,7 @@ export async function PUT(req, { params }) {
 
   const result = await collection.updateOne(
     { _id: new ObjectId(params.id) },
-    { $set: { progress, completed } }
+    { $set: { progress, completed, filename  } }
   );
 
   if (!result.modifiedCount) {
