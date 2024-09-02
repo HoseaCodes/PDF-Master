@@ -1,3 +1,4 @@
+"use client"
 import Link from 'next/link';
 import MaxWidthWrapper from './maxwidthwapper';
 import { buttonVariants } from './ui/button';
@@ -9,11 +10,14 @@ import { buttonVariants } from './ui/button';
 import { ArrowRight } from 'lucide-react';
 import UserAccountNav from './useraccountnav';
 import MobileNav from './mobilenav';
+import { useSession, signOut, signIn } from 'next-auth/react';
 
 const Navbar = () => {
-//   const { getUser } = getKindeServerSession();
+  //   const { getUser } = getKindeServerSession();
   const getUser = () => { };
   const user = getUser();
+  const { data: session } = useSession();
+  console.log(session);
 
   return (
     <nav className='sticky h-14 inset-x-0 top-0 z-30 w-full border-b border-gray-200 bg-white/75 backdrop-blur-lg transition-all'>
@@ -30,36 +34,31 @@ const Navbar = () => {
           <div className='hidden items-center space-x-4 sm:flex'>
             {!user ? (
               <>
-                <Link
-                  href='/pricing'
-                  className={buttonVariants({
-                    variant: 'ghost',
-                    size: 'sm',
-                  })}>
-                  Pricing
-                </Link>
-                <div className={buttonVariants({
-                    variant: 'ghost',
-                    size: 'sm',
-                  })} href='/api/auth/signin'>Sign in</div>
-                {/* <LoginLink
-                  className={buttonVariants({
-                    variant: 'ghost',
-                    size: 'sm',
-                  })}>
-                  Sign in
-                </LoginLink> */}
-                <div className={buttonVariants({
-                    variant: 'ghost',
-                    size: 'sm',
-                  })} href='/api/auth/register'>Get started</div>
-                {/* <RegisterLink
-                  className={buttonVariants({
-                    size: 'sm',
-                  })}>
-                  Get started{' '}
-                  <ArrowRight className='ml-1.5 h-5 w-5' />
-                </RegisterLink> */}
+                {session ? (
+                  <>
+                    <p>Welcome, {session.data.email}</p>
+                    <button onClick={() => signOut()}>Sign Out</button>
+                  </>
+                ) : (
+                  <>
+                    <div className={buttonVariants({
+                      variant: 'ghost',
+                      size: 'sm',
+                    })} href='/api/auth/signin'>Sign in</div>
+                    <Link
+                      href='/pricing'
+                      className={buttonVariants({
+                        variant: 'ghost',
+                        size: 'sm',
+                      })}>
+                      Pricing
+                    </Link>
+                    <div className={buttonVariants({
+                      variant: 'ghost',
+                      size: 'sm',
+                    })} href='/api/auth/signup'>Get started</div>
+                  </>
+                )}
               </>
             ) : (
               <>

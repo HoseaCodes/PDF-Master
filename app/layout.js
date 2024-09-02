@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import { cn } from '@/lib/utils';
-import ClientSessionProvider from '@/components/ClientSessionProvider'; // Import the new client-side component
+import AuthProvider from "./context/authProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +20,10 @@ export default function RootLayout({ children }) {
           inter.className
         )}
       >
-        <ClientSessionProvider>
+        <AuthProvider>
           <Navbar />
           {children}
-        </ClientSessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );

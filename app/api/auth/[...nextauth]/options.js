@@ -1,60 +1,75 @@
-import CredentialsProvider from 'next-auth/providers/credentials';
+//@ts-nocheck
+import GitHubProvider from "next-auth/providers/github";
+import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 
-const baseURL = process.env.NEXT_PUBLIC_HOSTNAME + "login";
+const baseURL = process.env.NEXT_PUBLIC_HOSTNAME + "auth/signin";
 
-export const authOptions = {
+export const options = {
+  session: {
+    strategy: "jwt",
+  },
   providers: [
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+    }),
+    GoogleProvider({
+      clientId: process.env.NEXT_GOOGLE_CLIENT_ID,
+      clientSecret: process.env.NEXT_GOOGLE_CLIENT_SECRET,
+    }),
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        username: { label: "Email", type: "email", placeholder: "" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        // This is where you need to retrieve user data
+        // to verify with credentials
+        // Docs: https://next-auth.js.org/configuration/providers/credentials
         const requestBody = {
-            email: credentials.email,
-            password: credentials.password,
-          };
-          const res = await fetch(baseURL, {
-            method: "POST",
-            body: JSON.stringify(requestBody),
-            headers: { "Content-Type": "application/json" },
-          });
-          const resdata = await res.json();
-          console.log("Login...", resdata);
-          if (
-            resdata.status === 400 ||
-            resdata.status === 401 ||
-            resdata.status === 403 ||
-            resdata.status === 500
-          ) {
-            return null;
-          }
-          if (resdata.status === 200 || resdata.status === 201) {
-            return resdata;
-          }
-          // Return null if user data could not be retrieved
+          email: credentials.email,
+          password: credentials.password,
+        };
+        console.log("Login...", baseURL);
+        const res = await fetch(baseURL, {
+          method: "POST",
+          body: JSON.stringify(requestBody),
+          headers: { "Content-Type": "application/json" },
+        });
+        const resdata = await res.json();
+        console.log("Login...", resdata);
+        if (
+          resdata.status === 400 ||
+          resdata.status === 401 ||
+          resdata.status === 403 ||
+          resdata.status === 500
+        ) {
           return null;
-      }
-    })
+        }
+        if (resdata.status === 200 || resdata.status === 201) {
+          return resdata;
+        }
+        // Return null if user data could not be retrieved
+        return null;
+      },
+    }),
   ],
-  session: {
-    strategy: 'jwt',
-  },
   pages: {
-    // signIn: '/auth/signin',
-    // signUp: '/auth/signup',
+    // signIn: "/",
+    // error: '/auth/error',
+    // signOut: '/auth/signout'
   },
   callbacks: {
-    async session({ session, token }) {
-      session.user.id = token.sub;
-      return session;
-    },
     async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id;
-      }
+      // the user present here gets the same data as received from DB call  made above -> fetchUserInfo(credentials.opt)
+      return { ...token, ...user };
+    },
+    async session({ session, user, token }) {
+      // user param present in the session(function) does not recive all the data from DB call -> fetchUserInfo(credentials.opt)
       return token;
     },
   },
+  secret: process.env.JWT_SECRET,
 };
