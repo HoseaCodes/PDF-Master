@@ -4,17 +4,27 @@ import { useState, useEffect, useRef } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { Play, Octagon, Save } from 'lucide-react';
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogFooter } from '@/components/ui/dialog'; // Assuming you have a Dialog component
+import { Dialog, DialogContent, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import AWS from '@/lib/aws';
 
 export default function PdfPage({ params }) {
   const [pdfData, setPdfData] = useState(null);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  const [highlightedText, setHighlightedText] = useState("");
   const [progress, setProgress] = useState(0);
   const [speaking, setSpeaking] = useState(false);
-  const [newFilename, setNewFilename] = useState(""); // State for new filename
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
-  const speechSynthesis = useRef(typeof window !== "undefined" ? window.speechSynthesis : null);
+  const [newFilename, setNewFilename] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [selectedVoice, setSelectedVoice] = useState('Joanna');
+  const [totalCharactersProcessed, setTotalCharactersProcessed] = useState(0);
+  const [cost, setCost] = useState(0);
+  const [selectedMethod, setSelectedMethod] = useState('polly');
+
+  const polly = new AWS.Polly();
+  const audioRef = useRef(null);
   const utteranceRef = useRef(null);
+  const speechSynthesis = useRef(window.speechSynthesis);
 
   useEffect(() => {
     const fetchPdfData = async () => {
@@ -23,41 +33,104 @@ export default function PdfPage({ params }) {
         const data = await res.json();
         setPdfData(data);
         setProgress(data.progress);
-        setNewFilename(data.filename); // Initialize newFilename with the current filename
+        setNewFilename(data.filename);
       }
     };
     fetchPdfData();
   }, [params.id]);
 
-  const startReading = () => {
+  useEffect(() => {
+    // Update cost when total characters processed changes
+    const costPerCharacter = 0.000004; // Example cost per character
+    setCost(totalCharactersProcessed * costPerCharacter);
+  }, [totalCharactersProcessed]);
+
+  const startReading = async () => {
     if (pdfData) {
-      const utterance = new SpeechSynthesisUtterance(pdfData.textContent.slice(currentTextIndex));
+      if (cost >= 0.1 || selectedMethod === 'speechSynthesis') {
+        // Use SpeechSynthesisUtterance if cost is above the threshold
+        const utterance = new SpeechSynthesisUtterance(pdfData.textContent.slice(currentTextIndex));
 
-      utterance.onend = () => {
-        setProgress(100);
-        updateProgress(100, true);
-        setSpeaking(false);
-      };
+        utterance.onend = () => {
+          setProgress(100);
+          updateProgress(100, true);
+          setSpeaking(false);
+        };
 
-      utterance.onboundary = (event) => {
-        if (event.name === 'word') {
-          setCurrentTextIndex(currentTextIndex + event.charIndex);
-          const newProgress = Math.round(
-            ((currentTextIndex + event.charIndex) / pdfData.textContent.length) * 100
-          );
-          setProgress(newProgress);
-          updateProgress(newProgress, false);
+        utterance.onboundary = (event) => {
+          if (event.name === 'word') {
+            setCurrentTextIndex(currentTextIndex + event.charIndex);
+            const newProgress = Math.round(
+              ((currentTextIndex + event.charIndex) / pdfData.textContent.length) * 100
+            );
+            setProgress(newProgress);
+            updateProgress(newProgress, false);
+          }
+        };
+
+        speechSynthesis.current.speak(utterance);
+        setSpeaking(true);
+        utteranceRef.current = utterance;
+      } else {
+        // Use Amazon Polly if cost is below the threshold
+        const textChunks = splitTextIntoChunks(pdfData.textContent.slice(currentTextIndex), 3000);
+
+        for (const chunk of textChunks) {
+          const params = {
+            OutputFormat: 'mp3',
+            Text: chunk,
+            VoiceId: selectedVoice,
+          };
+
+          try {
+            const { AudioStream } = await polly.synthesizeSpeech(params).promise();
+            const audioBlob = new Blob([AudioStream], { type: 'audio/mp3' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            setAudioUrl(audioUrl);
+
+            const audio = new Audio(audioUrl);
+            audioRef.current = audio;
+
+            console.log('Playing audio:', audioUrl, audio, currentTextIndex, chunk.length, chunk);
+            const chunkStartIndex = currentTextIndex;
+            const chunkEndIndex = chunkStartIndex + chunk.length;
+            setCurrentTextIndex((prevIndex) => prevIndex + (chunk.length - 1));
+            setHighlightedText(chunk);
+            setTotalCharactersProcessed((prev) => prev + chunk.length);
+
+            audio.onended = () => {
+              const newProgress = Math.min(progress + (chunk.length / pdfData.textContent.length) * 100, 100);
+              setProgress(newProgress);
+              setCurrentTextIndex((prevIndex) => prevIndex + chunk.length);
+              updateProgress(newProgress, newProgress === 100);
+              setSpeaking(false);
+            };
+
+            audio.play();
+            setSpeaking(true);
+
+            await new Promise((resolve) => {
+              audio.onended = resolve;
+            });
+          } catch (error) {
+            console.error('Error synthesizing speech:', error);
+          }
         }
-      };
-
-      speechSynthesis.current.speak(utterance);
-      setSpeaking(true);
-      utteranceRef.current = utterance;
+      }
     }
   };
 
+  const splitTextIntoChunks = (text, chunkSize) => {
+    const regex = new RegExp(`.{1,${chunkSize}}`, 'g');
+    return text.match(regex) || [];
+  };
+
   const stopReading = () => {
-    speechSynthesis.current.cancel();
+    if (speechSynthesis.current.speaking) {
+      speechSynthesis.current.cancel();
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+    }
     setSpeaking(false);
   };
 
@@ -87,15 +160,28 @@ export default function PdfPage({ params }) {
         });
         console.log('Filename updated:', res);
         setPdfData((prevData) => ({ ...prevData, filename: newFilename }));
-        setIsModalOpen(false); // Close modal after saving
+        setIsModalOpen(false);
       } catch (error) {
         console.error('Failed to update filename:', error);
       }
     }
   };
 
+  const highlightText = (text, searchTerm) => {
+    const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
+    return parts.map((part, index) =>
+      part.toLowerCase() === searchTerm.toLowerCase() ? (
+        <span key={index} className="bg-yellow-200">
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
+  };
+
   return (
-    <div>
+    <div className='flex flex-col'>
       {pdfData ? (
         <>
           <div className="flex items-center justify-center">
@@ -108,6 +194,33 @@ export default function PdfPage({ params }) {
             </button>
           </div>
 
+          <div className="flex items-center justify-center mt-4">
+            <label className="mr-2 text-lg">Select Voice:</label>
+            <select
+              value={selectedVoice}
+              onChange={(e) => setSelectedVoice(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="Joanna">Joanna</option>
+              <option value="Matthew">Matthew</option>
+              <option value="Kendra">Kendra</option>
+              <option value="Kimberly">Kimberly</option>
+              <option value="Justin">Justin</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-center mt-4">
+            <label className="mr-2 text-lg">Select API:</label>
+            <select
+              value={selectedMethod}
+              onChange={(e) => setSelectedMethod(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="speechSynthesis">Speech API</option>
+              <option value="polly">AWS Polly</option>
+            </select>
+          </div>
+
+
           <div className="w-full mt-4 max-w-xs mx-auto">
             <Progress
               indicatorColor={progress === 100 ? 'bg-green-500' : ''}
@@ -115,6 +228,7 @@ export default function PdfPage({ params }) {
               className="h-1 w-full bg-zinc-200"
             />
           </div>
+
           <div className="flex justify-center mt-4 space-x-4">
             <button
               onClick={startReading}
@@ -132,17 +246,31 @@ export default function PdfPage({ params }) {
             </button>
           </div>
 
-          <Card className="mt-4 p-4 flex">
-            <p className='prose items-center justify-center'>
-              {pdfData.textContent.slice(0, currentTextIndex)}
-              <span className="bg-yellow-200">
-                {pdfData.textContent.slice(currentTextIndex, currentTextIndex + 50)}
-              </span>
-              {pdfData.textContent.slice(currentTextIndex + 50)}
-            </p>
+          {/* Usage Calculator */}
+          <Card className="mt-4 p-4 flex justify-center items-center flex-col">
+            <p className='font-bold'>Total Characters Processed: {totalCharactersProcessed}</p>
+            <p className='font-bold'>Estimated Cost: ${cost.toFixed(4)}</p>
           </Card>
 
-          {/* Modal for renaming */}
+          {selectedMethod === 'speechSynthesis' ? (
+            <Card className="mt-4 p-4 flex w-max self-center">
+              <p className='prose items-center justify-center'>
+                {pdfData.textContent.slice(0, currentTextIndex)}
+                <span className="bg-yellow-200">
+                  {pdfData.textContent.slice(currentTextIndex, currentTextIndex + 50)}
+                </span>
+                {pdfData.textContent.slice(currentTextIndex + 50)}
+              </p>
+            </Card>
+          ) : (
+            <Card className="mt-4 p-4 flex w-max self-center">
+              <p className='prose items-center justify-center'>
+                {highlightText(pdfData.textContent, highlightedText)}
+              </p>
+            </Card>
+          )}
+
+
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogContent>
               <DialogTitle>Update Filename</DialogTitle>
