@@ -94,6 +94,7 @@ export async function POST(req) {
                 completed: false,
                 progress: 0,
                 filename,
+                createdAt: new Date(),
             });
             console.log('Document inserted successfully.');
         }

@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/card';
+import { Play, Octagon } from 'lucide-react';
 
 export default function PdfPage({ params }) {
   const [pdfData, setPdfData] = useState(null);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [speaking, setSpeaking] = useState(false);
-  const speechSynthesis = useRef(window.speechSynthesis);
+  const speechSynthesis = useRef(typeof window !== "undefined" ? window.speechSynthesis : null);
   const utteranceRef = useRef(null);
 
   useEffect(() => {
@@ -74,24 +76,24 @@ export default function PdfPage({ params }) {
               className="h-1 w-full bg-zinc-200"
             />
           </div>
-          <button onClick={startReading} disabled={speaking}>
-            Start Reading
-          </button>
-          <button onClick={stopReading} disabled={!speaking}>
-            Stop Reading
-          </button>
+          <div className="flex justify-center mt-4 space-x-4">
+            <button onClick={startReading} disabled={speaking} className="p-2 rounded bg-blue-500 hover:bg-blue-600 disabled:opacity-50">
+              <Play className="text-white" />
+            </button>
+            <button onClick={stopReading} disabled={!speaking} className="p-2 rounded bg-red-500 hover:bg-red-600 disabled:opacity-50">
+              <Octagon className="text-white" />
+            </button>
+          </div>
 
-          {/* Display the text content with the highlighted portion */}
-          <div className="mt-4">
+          <Card className="mt-4 p-4">
             <p>
-              {/* Highlight the part of the text that is currently being read */}
               {pdfData.textContent.slice(0, currentTextIndex)}
               <span className="bg-yellow-200">
                 {pdfData.textContent.slice(currentTextIndex, currentTextIndex + 50)}
               </span>
               {pdfData.textContent.slice(currentTextIndex + 50)}
             </p>
-          </div>
+          </Card>
         </>
       ) : (
         <p>Loading...</p>

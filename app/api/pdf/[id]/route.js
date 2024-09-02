@@ -1,5 +1,4 @@
-// app/api/pdf/[id]/route.js
-import clientPromise from '../../../../lib/db';
+import clientPromise from '@/lib/db';
 import { ObjectId } from 'mongodb';
 
 export async function GET(req, { params }) {
@@ -33,4 +32,29 @@ export async function PUT(req, { params }) {
   }
 
   return new Response('Updated successfully');
+}
+
+export async function DELETE(request) {
+  const client = await clientPromise;
+  const db = client.db();
+  const id = request.url.split('/').pop();
+
+  try {
+    const result = await db.collection('pdfs').deleteOne({ _id: new ObjectId(id) });
+    if (result.deletedCount === 0) {
+      return new Response(JSON.stringify({ error: 'File not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ message: 'File deleted successfully' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to delete file' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
