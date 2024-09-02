@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import { cn } from '@/lib/utils';
+import ClientSessionProvider from '@/components/ClientSessionProvider'; // Import the new client-side component
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,12 +15,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-         className={cn(
+        className={cn(
           'min-h-screen font-sans antialiased grainy',
           inter.className
-        )}>
-        <Navbar />
-        {children}
+        )}
+      >
+        <ClientSessionProvider>
+          <Navbar />
+          {children}
+        </ClientSessionProvider>
       </body>
     </html>
   );
