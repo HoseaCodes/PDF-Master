@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Play, Octagon, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import AWS from '@/lib/aws';
+import VoiceSelector from '@/components/voiceselector';
 
 export default function PdfPage({ params }) {
   const [pdfData, setPdfData] = useState(null);
@@ -92,8 +93,6 @@ export default function PdfPage({ params }) {
             audioRef.current = audio;
 
             console.log('Playing audio:', audioUrl, audio, currentTextIndex, chunk.length, chunk);
-            const chunkStartIndex = currentTextIndex;
-            const chunkEndIndex = chunkStartIndex + chunk.length;
             setCurrentTextIndex((prevIndex) => prevIndex + (chunk.length - 1));
             setHighlightedText(chunk);
             setTotalCharactersProcessed((prev) => prev + chunk.length);
@@ -193,21 +192,7 @@ export default function PdfPage({ params }) {
               <Save className="h-5 w-5" />
             </button>
           </div>
-
-          <div className="flex items-center justify-center mt-4">
-            <label className="mr-2 text-lg">Select Voice:</label>
-            <select
-              value={selectedVoice}
-              onChange={(e) => setSelectedVoice(e.target.value)}
-              className="p-2 border rounded"
-            >
-              <option value="Joanna">Joanna</option>
-              <option value="Matthew">Matthew</option>
-              <option value="Kendra">Kendra</option>
-              <option value="Kimberly">Kimberly</option>
-              <option value="Justin">Justin</option>
-            </select>
-          </div>
+          <VoiceSelector selectedVoice={selectedVoice} setSelectedVoice={setSelectedVoice} />
           <div className="flex items-center justify-center mt-4">
             <label className="mr-2 text-lg">Select API:</label>
             <select
