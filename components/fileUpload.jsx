@@ -78,7 +78,7 @@ export default function FileUpload({ pdfFiles, setPdfFiles, setPDFData, fieldPon
           setFiles(fileItems.map((fileItem) => fileItem.file));
         }
       }}
-      maxFileSize="450KB"
+      maxFileSize="450MB"
       acceptedFileTypes={["application/pdf"]}
       files={files}
       allowMultiple={true}
