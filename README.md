@@ -33,6 +33,8 @@ This application is built with Next.js and uses MongoDB for data storage and AWS
 - **Next.js**: A React framework for building web applications with server-side rendering and static site generation.
 - **MongoDB**: A NoSQL database for storing user data, including uploaded PDFs, user progress, and metadata.
 - **AWS S3**: A cloud storage service used to store PDF files.
+- **AWS Polly**: Used for text-to-speech functionality to read PDFs aloud.
+- **Vault**: For securely storing and accessing sensitive credentials.
 
 ## Getting Started
 
@@ -41,6 +43,7 @@ This application is built with Next.js and uses MongoDB for data storage and AWS
 - Node.js installed on your local machine.
 - MongoDB instance for database operations.
 - AWS account with an S3 bucket for storing PDF files.
+- Access to Vault for retrieving secrets (AWS credentials).
 
 ### Installation
 
@@ -52,14 +55,27 @@ This application is built with Next.js and uses MongoDB for data storage and AWS
 
 2. **Install dependencies:**
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
 
-3. **Set up environment variables:**
+3. **Set up AWS credentials:**
+   - Pull secrets from Vault:
+     ```bash
+     # Replace with your vault command
+     vault kv get -format=json secret/pdf-master/aws > aws_secrets.json
+     ```
+   - Create the `polly-user_accessKeys.csv` file:
+     ```bash
+     echo "Access key ID,Secret access key" > polly-user_accessKeys.csv
+     echo "YOUR_ACCESS_KEY_ID,YOUR_SECRET_ACCESS_KEY" >> polly-user_accessKeys.csv
+     ```
+   - Update the CSV with actual credentials from Vault.
+
+4. **Set up environment variables:**
    - Create a `.env` file in the root directory.
    - Add your MongoDB connection string, AWS credentials, and any other necessary environment variables.
 
-4. **Run the development server:**
+5. **Run the development server:**
    ```bash
    npm run dev
    ```
@@ -99,6 +115,12 @@ This application is built with Next.js and uses MongoDB for data storage and AWS
 
 - **Functionality**: Deletes inactive user accounts after one year, removing corresponding MongoDB entries and deleting associated PDFs from AWS S3.
 
+## Security
+
+- **Vault Integration**: All sensitive credentials, including AWS access keys, are stored securely in Vault.
+- **AWS IAM**: A dedicated user (polly-user) with limited permissions is used for AWS Polly services.
+- **Credential Management**: AWS credentials are stored in `polly-user_accessKeys.csv` which should be kept secure and never committed to version control.
+
 ## Contributing
 
 Feel free to submit issues and pull requests if you'd like to contribute to the project.
@@ -106,11 +128,3 @@ Feel free to submit issues and pull requests if you'd like to contribute to the 
 ## License
 
 This project is licensed under the MIT License.
-
-## Contact
-
-For any inquiries, please contact [your-email@example.com](mailto:your-email@example.com).
-
----
-
-This README provides a comprehensive overview of the application, its features, setup instructions, and API documentation. Adjust the content as necessary to fit your specific project details.
